@@ -7,10 +7,6 @@ import (
 )
 
 // TODO test ranges
-// TODO test ipv4
-// TODO test ipv6
-// TODO test no from
-// TODO test no header
 
 const (
 	xForwardedFor = "X-Forwarded-For"
@@ -244,6 +240,30 @@ func TestConfig_getXRealIp(t *testing.T) {
 			},
 			want: remoteAddr,
 		},
+		{
+			name: "recursive: values in header already known",
+			config: Config{
+				from:      []string{remoteAddr},
+				header:    xRealIP,
+				recursive: true,
+			},
+			headers: http.Header{
+				xRealIP: []string{remoteAddr},
+			},
+			want: remoteAddr,
+		},
+		{
+			name: "recursive: multiple values in header already known",
+			config: Config{
+				from:      []string{remoteAddr},
+				header:    xRealIP,
+				recursive: true,
+			},
+			headers: http.Header{
+				xRealIP: []string{remoteAddr, "127.0.0.1"},
+			},
+			want: remoteAddr,
+		},
 	}
 
 	for _, tt := range tests {
@@ -259,7 +279,6 @@ func TestConfig_getXRealIp(t *testing.T) {
 				}
 			})
 			d, err := New(context.Background(), handler, &test.config, "test-plugin")
-			// require.NoError(t, err)
 			if err != nil {
 				t.Fail()
 			}

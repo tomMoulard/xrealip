@@ -39,36 +39,43 @@ func CreateConfig() *Config {
 
 // Demo a Demo plugin.
 type Demo struct {
-	config *Config
-	ctx    context.Context
-	fromIP []net.IP
-	name   string
-	next   http.Handler
+	config    *Config
+	ctx       context.Context
+	fromIP    []*net.IP
+	fromIPNet []*net.IPNet
+	name      string
+	next      http.Handler
 }
 
 // New created a new Demo plugin.
 func New(ctx context.Context, next http.Handler, config *Config, name string) (http.Handler, error) {
 	log.Default().Printf("xrealip plugin, loading configuration: %+v", config)
-
-	// var fromIP []net.IP
-	fromIP := make([]net.IP, len(config.from))
-	for i, ip := range config.from {
-		fromIP[i] = net.ParseIP(ip)
-		// fromIP = append(fromIP, net.ParseIP(ip))
-	}
-
-	return &Demo{
+	demo := Demo{
 		config: config,
 		ctx:    ctx,
-		fromIP: fromIP,
 		name:   name,
 		next:   next,
-	}, nil
+	}
+
+	for _, ipMask := range config.from {
+		if ipAddr := net.ParseIP(ipMask); ipAddr != nil {
+			demo.fromIP = append(demo.fromIP, &ipAddr)
+			continue
+		}
+
+		_, ipNet, err := net.ParseCIDR(ipMask)
+		if err != nil {
+			return nil, err
+		}
+		demo.fromIPNet = append(demo.fromIPNet, ipNet)
+	}
+
+	return &demo, nil
 }
 
-func (a *Demo) trustRemote(remoteAddr net.IP) bool {
-	for _, ip := range a.fromIP {
-		if ip.Equal(remoteAddr) {
+func containsIP(ip net.IP, ips []*net.IP) bool {
+	for _, i := range ips {
+		if i.Equal(ip) {
 			return true
 		}
 	}
@@ -76,22 +83,20 @@ func (a *Demo) trustRemote(remoteAddr net.IP) bool {
 	return false
 }
 
+func (a *Demo) trustRemote(remoteAddr net.IP) bool {
+	return containsIP(remoteAddr, a.fromIP)
+}
+
 func (a *Demo) lastNotMatched(headerValues []string) string {
 	for i := len(headerValues) - 1; i >= 0; i-- {
-		value := net.ParseIP(strings.TrimSpace(headerValues[i]))
+		headerValueTrimmed := strings.TrimSpace(headerValues[i])
+		value := net.ParseIP(headerValueTrimmed)
 
-		var matched bool
-		for _, ip := range a.fromIP {
-			if ip.Equal(value) {
-				matched = true
-
-				break
-			}
-		}
-		if !matched {
-			return strings.TrimSpace(headerValues[i])
+		if !containsIP(value, a.fromIP) {
+			return headerValueTrimmed
 		}
 	}
+
 	return strings.TrimSpace(headerValues[len(headerValues)-1])
 }
 
