@@ -4,8 +4,6 @@ import (
 	"context"
 	"net/http"
 	"testing"
-
-	"github.com/stretchr/testify/require"
 )
 
 // TODO test ranges
@@ -255,12 +253,16 @@ func TestConfig_getXRealIp(t *testing.T) {
 				test.headers = make(map[string][]string)
 			}
 			req := http.Request{Header: test.headers, RemoteAddr: remoteAddr}
-			d, err := New(context.Background(), http.HandlerFunc(func(_ http.ResponseWriter, req *http.Request) {
+			handler := http.HandlerFunc(func(_ http.ResponseWriter, req *http.Request) {
 				if got := req.Header.Get(xRealIP); got != test.want {
 					t.Errorf("getXRealIP() = %v, want %v", got, test.want)
 				}
-			}), &test.config, "test-plugin")
-			require.NoError(t, err)
+			})
+			d, err := New(context.Background(), handler, &test.config, "test-plugin")
+			// require.NoError(t, err)
+			if err != nil {
+				t.Fail()
+			}
 
 			d.ServeHTTP(nil, &req)
 		})

@@ -50,9 +50,11 @@ type Demo struct {
 func New(ctx context.Context, next http.Handler, config *Config, name string) (http.Handler, error) {
 	log.Default().Printf("xrealip plugin, loading configuration: %+v", config)
 
-	var fromIP []net.IP
-	for _, ip := range config.from {
-		fromIP = append(fromIP, net.ParseIP(ip))
+	// var fromIP []net.IP
+	fromIP := make([]net.IP, len(config.from))
+	for i, ip := range config.from {
+		fromIP[i] = net.ParseIP(ip)
+		// fromIP = append(fromIP, net.ParseIP(ip))
 	}
 
 	return &Demo{
