@@ -3,6 +3,7 @@ package xrealip
 import (
 	"context"
 	"net/http"
+	"reflect"
 	"testing"
 )
 
@@ -284,6 +285,22 @@ func TestConfig_getXRealIp(t *testing.T) {
 			}
 
 			d.ServeHTTP(nil, &req)
+		})
+	}
+}
+
+func TestCreateConfig(t *testing.T) {
+	tests := []struct {
+		name string
+		want Config
+	}{
+		{name: "Empty"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := CreateConfig(); !reflect.DeepEqual(*got, tt.want) {
+				t.Errorf("CreateConfig() = %v, want %v", got, tt.want)
+			}
 		})
 	}
 }
