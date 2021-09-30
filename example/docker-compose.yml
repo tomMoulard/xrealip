@@ -1,0 +1,42 @@
+version: '3.6'
+
+services:
+  traefik:
+    # image: traefik/traefik:latest
+    image: traefik:2.5
+    command:
+      - --api.insecure=true
+      - --providers.docker
+      - --log.level=DEBUG
+      - --pilot.token=${PILOT_TOKEN}
+
+      - --experimental.localplugins.xrealip.modulename=github.com/tommoulard/xrealip
+      - --entrypoints.web.http.middlewares=xrealip
+    ports:
+      - "80:80"
+      - "8080:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ../:/plugins-local/src/github.com/tommoulard/xrealip
+    labels:
+      traefik.http.middlewares.xrealip.plugin.xrealip.insecure: false
+    tty: true
+  whoami-plug:
+    image: traefik/whoami
+    command: -name plug
+    labels:
+      traefik.http.routers.whoami-plug.rule: Host(`whoami.localhost`) && PathPrefix(`/plug`)
+      traefik.http.routers.whoami-plug.middlewares: xrealip@docker
+  whoami-notplug:
+    image: traefik/whoami
+    command: -name not-plug
+    labels:
+      traefik.http.routers.whoami-notplug.rule: Host(`whoami.localhost`) && PathPrefix(`/plug-not`)
+      # traefik.http.routers.whoami.middlewares: xrealip@docker
+  nginx:
+    image: nginx:1.21
+    ports:
+      - "80:80"
+    volumes:
+      - './nginx/conf:/etc/nginx/conf.d'
+

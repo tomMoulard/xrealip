@@ -1,11 +1,12 @@
-displayName: Demo Plugin
+displayName: X-Real-Ip like nginx
 type: middleware
 
-import: github.com/traefik/plugindemo
+import: github.com/tommoulard/xrealip
 
-summary: '[Demo] Add Request Header'
+summary: 'Modify the X-Real-Ip header to follow nginx behavior'
 
 testData:
-  Headers:
-    X-Demo: test
-    X-URL: '{{URL}}'
+  from:
+    - 127.0.0.1
+  headers: X-Forwarded-For
+  recursive: true
