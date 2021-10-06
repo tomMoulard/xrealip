@@ -51,14 +51,14 @@ http:
         xrealip:
           from:
              - 127.0.0.1
-          header: X-Forwarded-For
+          header: Cf-Connecting-Ip
           resursive: true
 ```
 
 The configuration matches the one given by nginx itself:
 
  - `from` is equivalent as `set_real_ip_from`
- - `header` is equivalent as `real_ip_header`
+ - `header` is equivalent as `real_ip_header` (default `X-Forwarded-For`)
  - `recursive` is equivalent as `real_ip_recursive`
 
 You can find a more in depth configuration description on the [nginx doc](https://nginx.org/en/docs/http/ngx_http_realip_module.html) itself.

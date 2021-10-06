@@ -34,7 +34,9 @@ type Config struct {
 
 // CreateConfig populates the Config data object.
 func CreateConfig() *Config {
-	return &Config{}
+	return &Config{
+		header: "X-Forwarded-For",
+	}
 }
 
 // Demo a Demo plugin.
